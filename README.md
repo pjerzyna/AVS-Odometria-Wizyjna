@@ -1,0 +1,5 @@
+### Wykorzystanie zoptymalizowanych par punktów (ORB/BRIEF)
+
+W projekcie zaimplementowano deskryptor **BRIEF** (jako część algorytmu ORB). Zamiast każdorazowego, losowego generowania par punktów do testów binarnych, zdecydowano się na użycie predefiniowanego zestawu współrzędnych z pliku `orb_descriptor_positions.txt`. Użycie stałej bazy punktów gwarantuje, że ten sam punkt kluczowy zawsze wygeneruje identyczny deskryptor, co umożliwia skuteczne porównywanie obrazów między różnymi uruchomieniami programu. Tak na dorbą sprawę, współrzędne w pliku nie są losowe, jest to zestaw 256 par zoptymalizowanych za pomocą algorytmu uczenia maszynowego (zgodnie ze specyfikacją ORB). Wybrane pary niosą najwięcej unikalnych informacji i nie dublują się wzajemnie.
+s
+Współrzędne te (zdefiniowane pierwotnie dla orientacji $0^\circ$) są w locie dynamicznie obracane o kąt $\alpha$ (wyznaczony z centroidu intensywności), co zapewnia deskryptorowi odporność na obroty kamery.
