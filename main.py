@@ -1,4 +1,4 @@
-# Implementacja Odometrii Wizyjnej - naraize szkic (Harris + ORB)
+# Implementacja Odometrii Wizyjnej - naraize szkic (Harris + ORB) + RANSAC
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -178,7 +178,7 @@ def matching_descriptors_hamming(desc1, coords1, desc2, coords2, n=20):
             # coordinates of the pair + distance between descriptors
             all_matches.append((coords1[i], coords2[best_idx_in_2], best_dist))
 
-    # Sorting by distance (the best matches have the smallest distance
+    # Sorting by distance (the best matches have the smallest distance)
     all_matches.sort(key=lambda x: x[2])
     return all_matches[:n]
 
@@ -216,12 +216,36 @@ if __name__ == "__main__":
     coords1 = [k['pt'] for k in kp1]
     coords2 = [k['pt'] for k in kp2]
     
-    matches_with_dist = matching_descriptors_hamming(desc1, coords1, desc2, coords2, n=20)
+    # ZWIĘKSZONO wartość 'n', aby RANSAC miał wystarczająco dużo punktów do przetestowania modeli
+    matches_with_dist = matching_descriptors_hamming(desc1, coords1, desc2, coords2, n=150)
 
     # Formatting for visualization, we take only coordinates, not distance
     # m[0] to (y1, x1), m[1] to (y2, x2)
     final_matches = [(m[0], m[1]) for m in matches_with_dist]
 
-    plot_matches(img1, img2, final_matches)
-    plt.title("ORB - 20 the best solutions")
+    # =====================================================================
+    # KROK 4: Estymacja transformacji i filtrowanie (RANSAC) wg rozprawy
+    # =====================================================================
+    
+    # Przekształcenie punktów z formatu (row, col) do formatu (x, y) dla OpenCV
+    src_pts = np.float32([[m[0][1], m[0][0]] for m in final_matches]).reshape(-1, 1, 2)
+    dst_pts = np.float32([[m[1][1], m[1][0]] for m in final_matches]).reshape(-1, 1, 2)
+
+    # Estymacja macierzy homografii i filtracja za pomocą algorytmu RANSAC
+    # Parametr 5.0 to dopuszczalny błąd (w pikselach) dla punktu, aby został uznany za inlier
+    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+
+    # Zachowaj tylko poprawne dopasowania (odrzucenie tzw. outliers)
+    if mask is not None:
+        matchesMask = mask.ravel().tolist()
+        good_matches = [m for i, m in enumerate(final_matches) if matchesMask[i] == 1]
+    else:
+        good_matches = []
+
+    print(f"Liczba dopasowań przed RANSAC: {len(final_matches)}")
+    print(f"Liczba poprawnych dopasowań po RANSAC: {len(good_matches)}")
+
+    # Wizualizacja poprawnych (przefiltrowanych) wyników
+    plot_matches(img1, img2, good_matches)
+    plt.title("Dopasowania po filtracji RANSAC")
     plt.show()
