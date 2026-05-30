@@ -29,9 +29,9 @@ Współrzędne w pliku nie są losowe – jest to zestaw 256 par zoptymalizowany
 3. **Tłumienie niemaksymalne (NMS - Non-Maximum Suppression)** Zachowuje tylko najsilniejszy punkt w otoczeniu o promieniu `nms_radius` pikseli. Zapewnia to równomierne rozłożenie punktów kluczowych na obrazie i eliminuje redundantne skupiska.
 
 4. **Orientacja względem centroidu intensywności (Intensity-centroid orientation)** Oblicza dominujący kierunek dla każdego punktu kluczowego na podstawie fragmentu obrazu (*patcha*) o wymiarach 31×31 pikseli za pomocą wzoru:
-   $$\theta = \operatorname{atan2}(m_{01}, m_{10})$$
+   theta = atan2(m01, m10)
 
-5. **BRIEF odporny na obroty (rBRIEF - Rotation-invariant BRIEF)** Wczytuje 256 zoptymalizowanych par $(x_1, y_1, x_2, y_2)$ z pliku `orb_descriptor_positions.txt`, obraca je o wyznaczony kąt $\theta$ i wykonuje 256 binarnych testów intensywności. Wynikiem jest kompaktowy, 256-bitowy deskryptor (zapisywany w pamięci jako 4 zmienne typu `uint64`).
+5. **BRIEF odporny na obroty (rBRIEF - Rotation-invariant BRIEF)** Wczytuje 256 zoptymalizowanych par $(x1, y1, x2, y2)$ z pliku `orb_descriptor_positions.txt`, obraca je o wyznaczony kąt $\theta$ i wykonuje 256 binarnych testów intensywności. Wynikiem jest kompaktowy, 256-bitowy deskryptor (zapisywany w pamięci jako 4 zmienne typu `uint64`).
 
 6. **Dopasowanie Brute-Force Hamming + test stosunku Lowe'a (Brute-force Hamming matching + Lowe's ratio test)** Wyszukuje dwa najbliższe sąsiedztwa dla każdego deskryptora przy użyciu odległości Hamminga. Filtruje dopasowania, pozostawiając tylko te najbardziej jednoznaczne, które spełniają warunek: `dist1 / dist2 < 0.75`.
 
