@@ -52,18 +52,19 @@ def _hamming_matrix(desc1: np.ndarray, desc2: np.ndarray) -> np.ndarray:
 #  Public matching API
 # =============================================================
 
+
 def matching_descriptors_hamming(
     desc1: np.ndarray,
     coords1: list,
     desc2: np.ndarray,
     coords2: list,
     n: int = 150,
-    ratio_threshold: float = 0.75,
+    max_hamming: int = 50,    # Maksymalny akceptowalny dystans Hamminga
+    margin: int = 5           # Minimalna różnica dystansu między 1. a 2. sąsiadem
 ) -> list:
     """
-    Brute-force Hamming matching with Lowe's ratio test.
-
-    Returns list of ((row1,col1), (row2,col2), distance), len ≤ n.
+    Brute-force Hamming matching z uwzględnieniem bezpiecznego marginesu 
+    oraz twardego progu dla deskryptorów binarnych.
     """
     if desc1.shape[0] == 0 or desc2.shape[0] == 0:
         return []
@@ -71,32 +72,37 @@ def matching_descriptors_hamming(
     D = _hamming_matrix(desc1, desc2)   # (N, M)
     N, M = D.shape
 
-    # Two nearest neighbours for every descriptor in set 1
+    valid_matches = []
+
     if M >= 2:
-        # Use partition to find top-2 cheaply
-        part = np.argpartition(D, 2, axis=1)[:, :2]   # (N, 2)
+        # POPRAWKA B: Używamy kth=1, ponieważ dla M=2 prawidłowe indeksy to 0 i 1.
+        part = np.argpartition(D, 1, axis=1)[:, :2]   # (N, 2)
         idx1 = part[:, 0]
         idx2 = part[:, 1]
-        # Make sure idx1 is truly the closer one
+        
+        # Upewniamy się, że idx1 wskazuje na najbliższego sąsiada
         swap = D[np.arange(N), idx1] > D[np.arange(N), idx2]
         idx1[swap], idx2[swap] = idx2[swap].copy(), idx1[swap].copy()
+        
         d1 = D[np.arange(N), idx1]
         d2 = D[np.arange(N), idx2]
-        ratio_ok = d1 < ratio_threshold * d2
-    else:
-        idx1 = np.zeros(N, dtype=np.int32)
-        d1   = D[:, 0]
-        ratio_ok = np.ones(N, dtype=bool)
+        
+        # POPRAWKA C: Stosujemy absolutny próg oraz bezpieczny margines różnicy 
+        # zamiast ułamkowego testu Lowe'a
+        ratio_ok = (d1 <= max_hamming) & (d1 <= d2 - margin)
+        
+        # Zbieranie wyników
+        for i in range(N):
+            if ratio_ok[i]:
+                valid_matches.append((coords1[i], coords2[idx1[i]], d1[i]))
+                
+    elif M == 1:
+        # Przypadek brzegowy - dostępny tylko jeden punkt w drugim obrazie
+        for i in range(N):
+            dist = D[i, 0]
+            if dist <= max_hamming:
+                valid_matches.append((coords1[i], coords2[0], dist))
 
-    # Apply ratio test
-    valid = np.where(ratio_ok)[0]
-    if len(valid) == 0:
-        return []
-
-    # Build match list and sort by distance
-    matches = [
-        (tuple(coords1[i]), tuple(coords2[idx1[i]]), int(d1[i]))
-        for i in valid
-    ]
-    matches.sort(key=lambda m: m[2])
-    return matches[:n]
+    # Sortowanie po dystansie i zwrócenie najlepszych `n` wyników
+    valid_matches.sort(key=lambda x: x[2])
+    return valid_matches[:n]
