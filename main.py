@@ -53,16 +53,20 @@ def parse_args():
                    help="Path to the 256 BRIEF pair offsets file")
     p.add_argument("--output_dir",  default="output",
                    help="Directory for saved figures")
-    p.add_argument("--threshold",   type=int,   default=20,
+    p.add_argument("--threshold",   type=int,   default=20, #12
                    help="FAST detection threshold (lower = more points)")
     p.add_argument("--n_best",      type=int,   default=500,
                    help="Max keypoints per frame after NMS + Harris scoring")
-    p.add_argument("--n_matches",   type=int,   default=150,
+    p.add_argument("--n_matches",   type=int,   default=300,
                    help="Number of candidates before RANSAC")
     p.add_argument("--ransac_thr",  type=float, default=5.0,
                    help="RANSAC reprojection error threshold (pixels)")
     p.add_argument("--save_strips", action="store_true",
                    help="Save per-pair match strip images")
+    p.add_argument("--n_min", type=int, default=30,
+                   help="Minimum RANSAC inliers to accept transformation")
+    p.add_argument("--delta_max", type=float, default=300.0,
+                   help="Maximum physical pixel displacement per frame")
     return p.parse_args()
 
 
@@ -97,6 +101,8 @@ def process_pair(
     n_best: int,
     n_matches: int,
     ransac_thr: float,
+    n_min: int = 30,
+    delta_max: float = 300.0,
 ) -> tuple:
     """
     Estimate the 2-D translation between two consecutive frames.
@@ -149,10 +155,22 @@ def process_pair(
     good_matches = [m for i, m in enumerate(raw_matches) if mask_flat[i] == 1]
     n_inliers = len(good_matches)
 
+    # Consensus Size Gating
+    if n_inliers < n_min:
+        # Too few inliers → unreliable estimate
+        return 0.0, 0.0, 0, [], None
+
     # --- Extract translation from homography ---
-    # For mostly-translating aerial cameras the (tx, ty) lives in H[0,2], H[1,2]
     tx = float(H[0, 2])
     ty = float(H[1, 2])
+
+    # Kinematic Translation Clamping
+    step_length = np.hypot(tx, ty)
+    if step_length > delta_max:
+        # Przycinanie wektora translacji z zachowaniem kierunku
+        scale = delta_max / step_length
+        tx *= scale
+        ty *= scale
 
     return tx, ty, n_inliers, good_matches, H
 
@@ -198,6 +216,10 @@ def main():
         raise IOError(f"Cannot read: {image_paths[0]}")
     img_prev = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2GRAY)
 
+    last_valid_tx = 0.0
+    last_valid_ty = 0.0
+    velocity_initialized = False
+
     print("\n─── Processing frame pairs ─────────────────────────────────")
     for frame_idx in range(1, n_frames):
         curr_bgr = cv2.imread(image_paths[frame_idx])
@@ -217,7 +239,27 @@ def main():
             n_best=args.n_best,
             n_matches=args.n_matches,
             ransac_thr=args.ransac_thr,
+            n_min=args.n_min,
+            delta_max=args.delta_max,
         )
+
+        # =============================================================
+        # Constant Velocity Model - fight with trees
+        # =============================================================
+        if n_inliers == 0: 
+            if velocity_initialized:
+                tx = last_valid_tx
+                ty = last_valid_ty
+                status_str = f"[EXTRAPOLATE] Inliers: {n_inliers:3d}"
+            else:
+                tx, ty = 0.0, 0.0
+                status_str = f"[LOSS-STATIC] Inliers: {n_inliers:3d}"
+        else:
+            # Update last valid translation for potential future extrapolation
+            last_valid_tx = tx
+            last_valid_ty = ty
+            velocity_initialized = True
+            status_str = f"             Inliers: {n_inliers:3d}"
 
         # Accumulate position
         cx += tx

@@ -59,12 +59,12 @@ def matching_descriptors_hamming(
     desc2: np.ndarray,
     coords2: list,
     n: int = 150,
-    max_hamming: int = 50,    # Maksymalny akceptowalny dystans Hamminga
-    margin: int = 5           # Minimalna różnica dystansu między 1. a 2. sąsiadem
+    max_hamming: int = 50,    
+    margin: int = 3           # minimal distance between 1st and 2nd neighbour
 ) -> list:
     """
-    Brute-force Hamming matching z uwzględnieniem bezpiecznego marginesu 
-    oraz twardego progu dla deskryptorów binarnych.
+    Brute-force Hamming matching with ratio test 
+    and threshold for binary descriptors.
     """
     if desc1.shape[0] == 0 or desc2.shape[0] == 0:
         return []
@@ -75,20 +75,19 @@ def matching_descriptors_hamming(
     valid_matches = []
 
     if M >= 2:
-        # POPRAWKA B: Używamy kth=1, ponieważ dla M=2 prawidłowe indeksy to 0 i 1.
+        # kth=1, because for M=2 the valid indices are 0 and 1.
         part = np.argpartition(D, 1, axis=1)[:, :2]   # (N, 2)
         idx1 = part[:, 0]
         idx2 = part[:, 1]
         
-        # Upewniamy się, że idx1 wskazuje na najbliższego sąsiada
+        # We ensure idx1 is the index of the smaller distance for the ratio test
         swap = D[np.arange(N), idx1] > D[np.arange(N), idx2]
         idx1[swap], idx2[swap] = idx2[swap].copy(), idx1[swap].copy()
         
         d1 = D[np.arange(N), idx1]
         d2 = D[np.arange(N), idx2]
         
-        # POPRAWKA C: Stosujemy absolutny próg oraz bezpieczny margines różnicy 
-        # zamiast ułamkowego testu Lowe'a
+        # Absolute threshold + ratio test
         ratio_ok = (d1 <= max_hamming) & (d1 <= d2 - margin)
         
         # Zbieranie wyników
@@ -97,12 +96,12 @@ def matching_descriptors_hamming(
                 valid_matches.append((coords1[i], coords2[idx1[i]], d1[i]))
                 
     elif M == 1:
-        # Przypadek brzegowy - dostępny tylko jeden punkt w drugim obrazie
+        # Case with only one descriptor in desc2: match if within max_hamming
         for i in range(N):
             dist = D[i, 0]
             if dist <= max_hamming:
                 valid_matches.append((coords1[i], coords2[0], dist))
 
-    # Sortowanie po dystansie i zwrócenie najlepszych `n` wyników
+    # Distance-based sorting and top-N selection
     valid_matches.sort(key=lambda x: x[2])
     return valid_matches[:n]
