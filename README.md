@@ -165,7 +165,7 @@ Final position       : (+809, +13 330) px
 
 ## References
 
-1. Tomasz Pogorzelski (2025) - Rozprawa doktorska; System samolokalizacji wizyjnej dla latających platform bezzałogowych
+1. T. Pogorzelski (2025) — *Visual self-localization system for unmanned aerial platforms* [Ph.D. dissertation]. [Warsaw University of Technology], Poland.
 2. Lowe (2004) - *Distinctive image features from scale-invariant keypoints* (ratio test)
 3. Fischler & Bolles (1981) - *Random Sample Consensus* (RANSAC)
 4. Scaramuzza & Fraundorfer (2011) - *Visual Odometry: Part I - The First 30 Years and Fundamentals*

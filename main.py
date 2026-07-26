@@ -1,5 +1,5 @@
 """
-Visual Odometry Pipeline  —  MPC (Motion Positioning Component)
+Visual Odometry Pipeline: MPC (Motion Positioning Component)
 ================================================================
 Processes a numbered sequence of aerial images (frame_001.jpg …
 frame_062.jpg) and estimates the camera trajectory by:
