@@ -167,7 +167,7 @@ def process_pair(
     # Kinematic Translation Clamping
     step_length = np.hypot(tx, ty)
     if step_length > delta_max:
-        # Przycinanie wektora translacji z zachowaniem kierunku
+        # Cutting translation vector to max length while preserving direction
         scale = delta_max / step_length
         tx *= scale
         ty *= scale
@@ -216,9 +216,8 @@ def main():
         raise IOError(f"Cannot read: {image_paths[0]}")
     img_prev = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2GRAY)
 
-    last_valid_tx = 0.0
-    last_valid_ty = 0.0
-    velocity_initialized = False
+    velocity_history = []
+    max_history_len = 3
 
     print("\n─── Processing frame pairs ─────────────────────────────────")
     for frame_idx in range(1, n_frames):
@@ -247,18 +246,20 @@ def main():
         # Constant Velocity Model - fight with trees
         # =============================================================
         if n_inliers == 0: 
-            if velocity_initialized:
-                tx = last_valid_tx
-                ty = last_valid_ty
+            if len(velocity_history) > 0:
+                # Average recent velocities to extrapolate current step
+                avg_vel = np.mean(velocity_history, axis=0)
+                tx = float(avg_vel[0])
+                ty = float(avg_vel[1])
                 status_str = f"[EXTRAPOLATE] Inliers: {n_inliers:3d}"
             else:
                 tx, ty = 0.0, 0.0
                 status_str = f"[LOSS-STATIC] Inliers: {n_inliers:3d}"
         else:
-            # Update last valid translation for potential future extrapolation
-            last_valid_tx = tx
-            last_valid_ty = ty
-            velocity_initialized = True
+            # If we have a valid estimate, add it to the velocity history
+            velocity_history.append([tx, ty])
+            if len(velocity_history) > max_history_len:
+                velocity_history.pop(0)
             status_str = f"             Inliers: {n_inliers:3d}"
 
         # Accumulate position

@@ -179,7 +179,7 @@ def get_orb_keypoints(
     img: np.ndarray,
     threshold: int = 20,
     n_best: int = 500,
-    nms_radius: int = 5,
+    nms_radius: int = 16,
     patch_radius: int = 15,
 ) -> list:
     """
