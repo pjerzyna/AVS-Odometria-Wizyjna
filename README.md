@@ -28,6 +28,43 @@
 
 ---
 
+## What is MPC and why does it matter?
+
+**MPC reffers to Motion Positioning Component** is a software module whose job is to answer one question continuously: *where am I right now?*
+
+In a full autonomous UAV system, the aircraft needs to know its position at all times to navigate, avoid obstacles, and complete missions. Classically this is solved with GPS. But GPS fails indoors, in urban canyons, under jamming, or simply when the signal is unavailable. MPC is the fallback - and sometimes the primary - positioning solution that works using nothing but the camera already on board.
+
+**How it fits into the bigger picture:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  UAV Autopilot System               │
+│                                                     │
+│  Camera ──► [ MPC (this project) ] ──► position     │
+│                       │                    │        │
+│                       ▼                    ▼        │
+│              feature tracking        flight control │
+│                                      path planning  │
+└─────────────────────────────────────────────────────┘
+```
+
+This approach (estimating motion purely from a camera image sequence) is called **Visual Odometry (VO)**. The name is borrowed from wheel odometry in ground robots: instead of counting wheel rotations, we count pixel displacements between frames. The result is a relative position estimate that accumulates frame by frame into a full trajectory.
+
+**Where this is used in the real world:**
+
+| Platform | Why GPS alone is not enough |
+|----------|-----------------------------|
+| Mars rovers (Curiosity, Perseverance) | No GPS infrastructure on Mars — NASA has used VO since 2004 |
+| Autonomous cars | GPS accuracy (~3 m) too coarse for lane-level driving |
+| Indoor drones | GPS signal blocked by buildings |
+| Military UAVs | GPS jamming in contested environments |
+| Augmented reality headsets | Need cm-level position indoors in real time |
+
+This project implements the core of such a system: it recovers the flight path **without any GPS, IMU, or external sensor** - camera only.
+
+---
+
+
 ## What this project does
 
 Given a sequence of **62 aerial photographs** taken from a UAV flying over a village, the system:
