@@ -30,7 +30,7 @@
 
 ## What is MPC and why does it matter?
 
-**MPC reffers to Motion Positioning Component** is a software module whose job is to answer one question continuously: *where am I right now?*
+MPC reffers to Motion Positioning Component is a software module whose job is to answer one question continuously: *where am I right now?*
 
 In a full autonomous UAV system, the aircraft needs to know its position at all times to navigate, avoid obstacles, and complete missions. Classically this is solved with GPS. But GPS fails indoors, in urban canyons, under jamming, or simply when the signal is unavailable. MPC is the fallback - and sometimes the primary - positioning solution that works using nothing but the camera already on board.
 
@@ -48,7 +48,7 @@ In a full autonomous UAV system, the aircraft needs to know its position at all 
 └─────────────────────────────────────────────────────┘
 ```
 
-This approach (estimating motion purely from a camera image sequence) is called **Visual Odometry (VO)**. The name is borrowed from wheel odometry in ground robots: instead of counting wheel rotations, we count pixel displacements between frames. The result is a relative position estimate that accumulates frame by frame into a full trajectory.
+This approach (estimating motion purely from a camera image sequence) is called Visual Odometry. The name is borrowed from wheel odometry in ground robots: instead of counting wheel rotations, we count pixel displacements between frames. The result is a relative position estimate that accumulates frame by frame into a full trajectory.
 
 **Where this is used in the real world:**
 
@@ -60,21 +60,21 @@ This approach (estimating motion purely from a camera image sequence) is called 
 | Military UAVs | GPS jamming in contested environments |
 | Augmented reality headsets | Need cm-level position indoors in real time |
 
-This project implements the core of such a system: it recovers the flight path **without any GPS, IMU, or external sensor** - camera only.
+This project implements the core of such a system: it recovers the flight path without any GPS, IMU, or external sensor - camera only.
 
 ---
 
 
 ## What this project does
 
-Given a sequence of **62 aerial photographs** taken from a UAV flying over a village, the system:
+Given a sequence of 62 aerial photographs taken from a UAV flying over a village, the system:
 
 1. Detects characteristic corner features in each frame (FAST + Harris)
 2. Describes them with a compact 256-bit binary fingerprint (rBRIEF)
 3. Matches those fingerprints across consecutive frames (Hamming distance + Lowe ratio test)
 4. Rejects geometrically inconsistent matches (RANSAC)
 5. Extracts the camera translation from the surviving matches
-6. Accumulates translations into a **full flight trajectory** - no GPS, no IMU, camera only
+6. Accumulates translations into a full flight trajectory - from images only
 
 ---
 
@@ -182,8 +182,8 @@ python main.py \
 
 ## The `orb_descriptor_positions.txt` file
 
-Contains **256 rows**, each `x1 y1 x2 y2` - pixel offsets for one binary intensity test.  
-These pairs were optimised by machine learning (Rublee et al., 2011 ORB paper) to be maximally informative and minimally correlated. Before descriptor computation each pair is **rotated by the keypoint's orientation angle θ**, giving rotation-invariant rBRIEF descriptors.
+Contains 256 rows, each `x1 y1 x2 y2` - pixel offsets for one binary intensity test.  
+These pairs were optimised by machine learning (Rublee et al., 2011 ORB paper) to be maximally informative and minimally correlated. Before descriptor computation each pair is rotated by the keypoint's orientation angle θ, giving rotation-invariant rBRIEF descriptors.
 
 ---
 
