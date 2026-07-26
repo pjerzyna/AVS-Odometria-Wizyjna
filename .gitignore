@@ -1,8 +1,13 @@
+# trash
 brick-a-brack/*
 lab6_feature_points/*
 lab7_opticalflow/*
 
+# Generated files
 __pycache__/*
 .vscode/*
+.gitignore
 
+# Input and Output images
+images/*
 output/*
