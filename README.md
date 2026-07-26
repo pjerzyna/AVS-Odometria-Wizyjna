@@ -12,19 +12,19 @@
 **Feature matches between two consecutive frames (RANSAC inliers)**
 
 <p align="center">
-  <img src="two_image_demo.png">
+  <img src="output/two_image_demo.png">
 </p>
 
-<!-- two_image_demo.png is 1907×574 px; -->
+<!-- output/two_image_demo.png is 1907×574 px; -->
 
 
 **Estimated flight trajectory - 62 frames**
 
 <p align="center">
-  <img src="trajectory.png" width="702">
+  <img src="output/trajectory.png" width="702">
 </p>
 
-<!-- trajectory.png is 1286×1026 px; displayed at width=702 → height≈560 px -->
+<!-- output/trajectory.png is 1286×1026 px; displayed at width=702 → height≈560 px -->
 
 ---
 
